@@ -78,7 +78,7 @@ jobs:
             tar -xzf "$tar_file" -C temp_extract
 
             # Find the wacli binary anywhere inside the extracted tree
-            bin_path="$(find temp_extract -type f -name 'wacli' -print -quit)"
+            bin_path="$(find temp_extract -type f \( -name 'wacli' -o -name 'wacli-*' \) -print -quit)"
             if [ -z "$bin_path" ]; then
               echo "Could not find 'wacli' inside $tar_file. Contents:"
               tar -tzf "$tar_file" | sed -n '1,200p'
