@@ -1,6 +1,7 @@
 version: 2
 
 project_name: wacli
+no_unique_dist_dir: true
 
 builds:
   - id: wacli_linux_amd64
