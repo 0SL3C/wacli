@@ -64,16 +64,21 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes ""
           fi
-      - name: Flatten dist directory
+      - name: Extract binaries from archives
         run: |
-          find dist -name "wacli" -type f | while read file; do
-            dir=$(dirname "$file")
-            if [[ "$dir" =~ arm64 ]]; then
-              cp "$file" "dist/wacli-linux-arm64"
-            elif [[ "$dir" =~ amd64 ]]; then
-              cp "$file" "dist/wacli-linux-amd64"
+          cd dist
+          for tar_file in wacli*.tar.gz; do
+            # Extract to a temp dir
+            mkdir -p temp_extract
+            tar -xzf "$tar_file" -C temp_extract
+            # Get the binary and rename it based on archive name
+            if [[ "$tar_file" =~ "arm64" ]]; then
+              mv temp_extract/wacli dist/wacli-linux-arm64
+            elif [[ "$tar_file" =~ "amd64" ]]; then
+              mv temp_extract/wacli dist/wacli-linux-amd64
             fi
           done
+          rm -rf temp_extract
       - name: Upload linux artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
