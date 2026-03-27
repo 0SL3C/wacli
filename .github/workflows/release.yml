@@ -70,6 +70,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "$RELEASE_TAG" \
-            dist/wacli-* \
+            dist/wacli* \
             dist/checksums-linux-windows.txt \
             --clobber
