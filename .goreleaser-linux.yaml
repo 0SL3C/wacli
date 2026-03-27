@@ -37,6 +37,9 @@ builds:
       - linux
     goarch:
       - arm64
+archives:
+  - files:
+      - none*
 
 checksum:
   name_template: checksums-linux-windows.txt
