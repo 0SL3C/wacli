@@ -1,0 +1,68 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/steipete/wacli.git || git remote set-url upstream https://github.com/steipete/wacli.git
+
+      - name: Fetch upstream
+        run: git fetch upstream
+
+      - name: Get latest upstream tag
+        id: upstream-tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 upstream/main 2>/dev/null || echo "")
+          echo "tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          echo "Latest upstream tag: ${LATEST_TAG}"
+
+      - name: Check if tag exists in fork
+        id: check-tag
+        run: |
+          if git rev-parse "refs/tags/${{ steps.upstream-tag.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Merge upstream main
+        run: |
+          git merge --allow-unrelated-histories -X theirs upstream/main || echo "Already up to date"
+
+      - name: Push changes
+        if: steps.check-tag.outputs.exists == 'false'
+        run: git push origin main --force-with-lease
+
+      - name: Fetch and push tags
+        if: steps.check-tag.outputs.exists == 'false'
+        run: |
+          git fetch upstream 'refs/tags/*:refs/tags/*'
+          git push origin --tags
+
+      - name: Trigger release workflow
+        if: steps.check-tag.outputs.exists == 'false' && steps.upstream-tag.outputs.tag != ''
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: sync-upstream-release
+          client-payload: '{"tag": "${{ steps.upstream-tag.outputs.tag }}"}'
