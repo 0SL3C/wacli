@@ -82,6 +82,25 @@ jobs:
             echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
           fi
 
+      - name: Ensure GitHub Release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes ""
+          fi
+
+      - name: Upload linux artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          files=(dist/*.tar.gz dist/checksums-linux-windows.txt)
+          gh release upload "$RELEASE_TAG" "${files[@]}" --clobber
+
       - name: Upload linux artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
