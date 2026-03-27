@@ -66,19 +66,34 @@ jobs:
           fi
       - name: Extract binaries from archives
         run: |
+          set -euo pipefail
           cd dist
+
+          rm -rf temp_extract
+          mkdir -p temp_extract
+
+          shopt -s nullglob
           for tar_file in wacli*.tar.gz; do
-            # Extract to a temp dir
-            mkdir -p temp_extract
+            rm -rf temp_extract/*
             tar -xzf "$tar_file" -C temp_extract
-            # Get the binary and rename it based on archive name
-            if [[ "$tar_file" =~ "arm64" ]]; then
-              mv temp_extract/wacli dist/wacli-linux-arm64
-            elif [[ "$tar_file" =~ "amd64" ]]; then
-              mv temp_extract/wacli dist/wacli-linux-amd64
+
+            # Find the wacli binary anywhere inside the extracted tree
+            bin_path="$(find temp_extract -type f -name 'wacli' -print -quit)"
+            if [ -z "$bin_path" ]; then
+              echo "Could not find 'wacli' inside $tar_file. Contents:"
+              tar -tzf "$tar_file" | sed -n '1,200p'
+              exit 1
+            fi
+
+            if [[ "$tar_file" == *"arm64"* ]]; then
+              mv "$bin_path" "wacli-linux-arm64"
+            elif [[ "$tar_file" == *"amd64"* ]]; then
+              mv "$bin_path" "wacli-linux-amd64"
+            else
+              echo "Unknown arch for archive: $tar_file"
+              exit 1
             fi
           done
-          rm -rf temp_extract
       - name: Upload linux artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
