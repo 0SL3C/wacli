@@ -64,7 +64,16 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes ""
           fi
-
+      - name: Flatten dist directory
+        run: |
+          find dist -name "wacli" -type f | while read file; do
+            dir=$(dirname "$file")
+            if [[ "$dir" =~ arm64 ]]; then
+              cp "$file" "dist/wacli-linux-arm64"
+            elif [[ "$dir" =~ amd64 ]]; then
+              cp "$file" "dist/wacli-linux-amd64"
+            fi
+          done
       - name: Upload linux artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
