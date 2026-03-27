@@ -44,7 +44,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  goreleaser-linux-windows:
+  goreleaser-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,7 +59,7 @@ jobs:
           apt-packages: "build-essential gcc-aarch64-linux-gnu libc6-dev-arm64-cross mingw-w64"
 
       - name: Stash GoReleaser config
-        run: cp .goreleaser-linux-windows.yaml /tmp/.goreleaser-linux-windows.yaml
+        run: cp .goreleaser-linux.yaml /tmp/.goreleaser-linux.yaml
 
       - name: Checkout release tag
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -70,7 +70,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=publish --config /tmp/.goreleaser-linux-windows.yaml
+          args: release --clean --skip=publish --config /tmp/.goreleaser-linux.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -82,7 +82,7 @@ jobs:
             echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
           fi
 
-      - name: Upload linux/windows artifacts
+      - name: Upload linux artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
